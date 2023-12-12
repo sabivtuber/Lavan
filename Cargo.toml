@@ -1,0 +1,11 @@
+[package]
+name = "lavan"
+version = "0.0.1-EXPERIMENTAL-SUBJECT-TO-BREAKING-CHANGES"
+edition = "2021"
+
+[dependencies]
+either = { version = "1.9.0", optional = true }
+
+[features]
+default = ["either"]
+either = ["dep:either"]
