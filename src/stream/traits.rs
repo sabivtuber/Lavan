@@ -48,4 +48,11 @@ pub trait Stream {
     {
         parser.parse_stream(self)
     }
+
+    fn has_next(&self) -> bool {
+        match self.peek() {
+            Some(_) => false,
+            None => true,
+        }
+    }
 }
