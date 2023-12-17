@@ -3,11 +3,12 @@ use std::fmt::Debug;
 use crate::{
     data::traits::{
         Attachable, Combinable, Disjoinable, Exceptional, Optionable, Recoverable, Response,
+        ResultConvertable, UnerringConvertable,
     },
     stream::traits::Stream,
 };
 
-use super::pure::Pure;
+use super::sure::Sure;
 
 pub struct Effect<E>(pub Result<(), E>);
 
@@ -75,12 +76,12 @@ impl<Err> Combinable<()> for Effect<Err> {
     }
 }
 
-impl<Err, Val> Combinable<Pure<Val>> for Effect<Err> {
+impl<Err, Val> Combinable<Sure<Val>> for Effect<Err> {
     type Output = Result<Val, Err>;
 
     fn combine_response<Fun>(self, response: Fun) -> Self::Output
     where
-        Fun: FnOnce() -> Pure<Val>,
+        Fun: FnOnce() -> Sure<Val>,
     {
         self.into_result()?;
         Ok(response().value())
@@ -138,7 +139,7 @@ impl<Err> Disjoinable<Effect<Err>> for Effect<Err> {
 }
 
 impl<Err> Recoverable for Effect<Err> {
-    fn recover_residual<Rec, Str>(self, on_residual: Rec, stream: &mut Str) -> Self
+    fn recover_response<Rec, Str>(self, on_residual: Rec, stream: &mut Str) -> Self
     where
         Rec: FnOnce(&mut Str),
         Str: Stream,
@@ -167,4 +168,27 @@ impl<Val> Optionable for Effect<Val> {
     fn opt_response(self) -> Self::Output {
         let _ = self;
     }
+}
+
+impl<Err> ResultConvertable for Effect<Err> {
+    type Value = ();
+    type Error = Err;
+    type WithVal<Col> = Effect<Err>;
+
+    fn ok(value: Self::Value) -> Self {
+        let _ = value;
+        Effect::ok()
+    }
+
+    fn err(error: Self::Error) -> Self {
+        Effect::err(error)
+    }
+
+    fn into_result(self) -> Result<Self::Value, Self::Error> {
+        self.into()
+    }
+}
+
+impl<Err> UnerringConvertable for Effect<Err> {
+    type Infallible = ();
 }

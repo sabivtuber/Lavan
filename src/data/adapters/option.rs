@@ -1,9 +1,11 @@
+use super::sure::Sure;
 use crate::{
-    data::traits::{Combinable, Data, Disjoinable, Ignorable, Optionable, Recoverable, Response},
+    data::traits::{
+        Combinable, Data, Disjoinable, Ignorable, Optionable, Recoverable, Response,
+        ResultConvertable, UnerringConvertable,
+    },
     stream::traits::Stream,
 };
-
-use super::pure::Pure;
 
 impl<T> Response for Option<T> {}
 
@@ -50,12 +52,12 @@ impl<Val0, Val1> Combinable<Option<Val1>> for Option<Val0> {
     }
 }
 
-impl<Val0, Val1> Combinable<Pure<Val1>> for Option<Val0> {
+impl<Val0, Val1> Combinable<Sure<Val1>> for Option<Val0> {
     type Output = Option<(Val0, Val1)>;
 
     fn combine_response<Fun>(self, response: Fun) -> Self::Output
     where
-        Fun: FnOnce() -> Pure<Val1>,
+        Fun: FnOnce() -> Sure<Val1>,
     {
         Some((self?, response().value()))
     }
@@ -86,7 +88,7 @@ impl<Val> Disjoinable<Option<Val>> for Option<Val> {
 }
 
 impl<Val> Recoverable for Option<Val> {
-    fn recover_residual<Rec, Str>(self, on_residual: Rec, stream: &mut Str) -> Self
+    fn recover_response<Rec, Str>(self, on_residual: Rec, stream: &mut Str) -> Self
     where
         Rec: FnOnce(&mut Str),
         Str: Stream,
@@ -110,9 +112,32 @@ impl<Val> Ignorable for Option<Val> {
 }
 
 impl<Val> Optionable for Option<Val> {
-    type Output = Pure<Option<Val>>;
+    type Output = Sure<Option<Val>>;
 
     fn opt_response(self) -> Self::Output {
-        Pure(self)
+        Sure(self)
     }
+}
+
+impl<Val> ResultConvertable for Option<Val> {
+    type Value = Val;
+    type Error = ();
+    type WithVal<Col> = Option<Col>;
+
+    fn ok(value: Self::Value) -> Self {
+        Some(value)
+    }
+
+    fn err(error: Self::Error) -> Self {
+        let _ = error;
+        None
+    }
+
+    fn into_result(self) -> Result<Self::Value, Self::Error> {
+        self.ok_or(())
+    }
+}
+
+impl<Val> UnerringConvertable for Option<Val> {
+    type Infallible = Sure<Self::Value>;
 }

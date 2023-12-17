@@ -1,11 +1,14 @@
+use std::fmt::Debug;
+
 use crate::{
     data::traits::{
         Combinable, Data, Disjoinable, Exceptional, Ignorable, Optionable, Recoverable, Response,
+        ResultConvertable, UnerringConvertable,
     },
     stream::traits::Stream,
 };
 
-use super::{effect::Effect, pure::Pure};
+use super::{effect::Effect, sure::Sure};
 
 impl<T, E> Response for Result<T, E> {}
 
@@ -64,12 +67,12 @@ impl<Val0, Val1, Err> Combinable<Result<Val1, Err>> for Result<Val0, Err> {
     }
 }
 
-impl<Val0, Val1, Err> Combinable<Pure<Val1>> for Result<Val0, Err> {
+impl<Val0, Val1, Err> Combinable<Sure<Val1>> for Result<Val0, Err> {
     type Output = Result<(Val0, Val1), Err>;
 
     fn combine_response<Fun>(self, response: Fun) -> Self::Output
     where
-        Fun: FnOnce() -> Pure<Val1>,
+        Fun: FnOnce() -> Sure<Val1>,
     {
         let value = self?;
         Ok((value, response().value()))
@@ -117,7 +120,7 @@ impl<Val, Err0, Err1> Disjoinable<Result<Val, Err1>> for Result<Val, Err0> {
 }
 
 impl<Val, Err> Recoverable for Result<Val, Err> {
-    fn recover_residual<Rec, Str>(self, on_residual: Rec, stream: &mut Str) -> Self
+    fn recover_response<Rec, Str>(self, on_residual: Rec, stream: &mut Str) -> Self
     where
         Rec: FnOnce(&mut Str),
         Str: Stream,
@@ -141,9 +144,31 @@ impl<Val, Err> Ignorable for Result<Val, Err> {
 }
 
 impl<Val, Err> Optionable for Result<Val, Err> {
-    type Output = Pure<Option<Val>>;
+    type Output = Sure<Option<Val>>;
 
     fn opt_response(self) -> Self::Output {
-        Pure(self.ok())
+        Sure(self.ok())
     }
+}
+
+impl<Val, Err> ResultConvertable for Result<Val, Err> {
+    type Value = Val;
+    type Error = Err;
+    type WithVal<Col> = Result<Col, Err>;
+
+    fn ok(value: Self::Value) -> Self {
+        Ok(value)
+    }
+
+    fn err(error: Self::Error) -> Self {
+        Err(error)
+    }
+
+    fn into_result(self) -> Result<Self::Value, Self::Error> {
+        self
+    }
+}
+
+impl<Val, Err> UnerringConvertable for Result<Val, Err> {
+    type Infallible = Sure<Self::Value>;
 }
