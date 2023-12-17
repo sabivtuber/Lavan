@@ -1,10 +1,11 @@
 [package]
 name = "lavan"
-version = "0.0.1-EXPERIMENTAL-SUBJECT-TO-BREAKING-CHANGES"
-description = "Lavan is a parser written in Rust, for empowering users build their own domain specific languages"
+version = "0.0.2-EXPERIMENTAL-SUBJECT-TO-BREAKING-CHANGES"
 authors = ["Sabi <sabivtuber@proton.me>"]
+description = "Lavan is a parser library"
 license = "GPL-3.0"
 license-file = "LICENSE"
+repository = "https://github.com/sabivtuber/lavan"
 edition = "2021"
 
 [dependencies]
