@@ -27,7 +27,24 @@ where
 
     fn parse_stream_once(self, input: &mut Str) -> Self::Output {
         let offset = input.offset();
-        self.parser.parse_stream_once(input).recover_residual(
+        self.parser.parse_stream_once(input).recover_response(
+            |input| {
+                *input.offset_mut() = offset;
+            },
+            input,
+        )
+    }
+}
+
+impl<Str, Par> ParserMut<Str> for NonTerminal<Par>
+where
+    Str: Stream,
+    Par: ParserMut<Str>,
+    Par::Output: Recoverable,
+{
+    fn parse_stream_mut(&mut self, input: &mut Str) -> Self::Output {
+        let offset = input.offset();
+        self.parser.parse_stream_mut(input).recover_response(
             |input| {
                 *input.offset_mut() = offset;
             },
